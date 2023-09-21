@@ -23,7 +23,7 @@ It is possible to use MixOptimize manually with command line, or automatically v
 `mixoptimize --skip-sounds "C&C_Cool_Map.mix"`
 
 #### Skipping texture conversion and confirmations
-`mixoptimize --skip-sounds --skip-confirmation "C&C_Cool_Map.mix"`
+`mixoptimize --skip-texture-conversion --skip-confirmation "C&C_Cool_Map.mix"`
 
 #### Passing the map to standard input
 `mixoptimize --read-stdin --out "C&C_Cooler_Map.mix" < "C&C_Cool_Map.mix"`
