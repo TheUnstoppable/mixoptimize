@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33829.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mixoptimize", "mixoptimize.csproj", "{90FED041-8CA7-48D1-8E97-F3E92E1D1301}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{90FED041-8CA7-48D1-8E97-F3E92E1D1301}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90FED041-8CA7-48D1-8E97-F3E92E1D1301}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90FED041-8CA7-48D1-8E97-F3E92E1D1301}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90FED041-8CA7-48D1-8E97-F3E92E1D1301}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {776650F9-2504-4ADC-B6B2-2A005DB340AF}
+	EndGlobalSection
+EndGlobal
