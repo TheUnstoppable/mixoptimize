@@ -24,7 +24,7 @@ public static class InputTask
     {
         using (var ms = new MemoryStream())
         {
-            str.CopyTo(ms);
+            await str.CopyToAsync(ms);
             return ms.ToArray();
         }
     }

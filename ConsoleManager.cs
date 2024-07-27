@@ -22,9 +22,9 @@ public static class ConsoleManager
 {
     private static int pBarMin, pBarMax, pBarVal;
     private static int pSpinnerStep;
-    private static CancellationTokenSource cancelToken;
+    private static CancellationTokenSource cancelToken = new();
 
-    public static string LoadingText;
+    public static string LoadingText = string.Empty;
     public static bool DoLoader;
     public static bool DoProgressBar;
 
@@ -68,14 +68,6 @@ public static class ConsoleManager
 
     public static void Init()
     {
-        LoadingText = string.Empty;
-        DoLoader = false;
-        DoProgressBar = false;
-        pBarMin = 0;
-        pBarMax = 0;
-        pBarVal = 0;
-
-        cancelToken = new();
         Task.Run(AnimationTask);
     }
 

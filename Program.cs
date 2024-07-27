@@ -56,7 +56,7 @@ public class MixOptimize
     public static bool ReadStandardInput = false;
     public static bool SkipConfirmation = false;
     public static int MaxExponent = 9;
-    public static string OutputFile = null;
+    public static string? OutputFile = null;
 
     static void Main(string[] args)
     {
@@ -131,7 +131,7 @@ public class MixOptimize
         }
 
 
-        byte[] mixFileBytes = null;
+        byte[] mixFileBytes;
 
         if (ReadStandardInput)
         {
@@ -295,7 +295,7 @@ public class MixOptimize
         {
             ConsoleManager.SetLoading($"Creating backup of {Path.GetFileName(targetFile)}...");
             var backupFileName = Path.GetFileName(targetFile) + "-BACKUP";
-            var backupPath = Path.Combine(Path.GetDirectoryName(targetFile), backupFileName);
+            var backupPath = Path.Combine(Path.GetDirectoryName(targetFile)!, backupFileName);
             if (File.Exists(backupPath))
             {
                 File.Delete(backupPath);
