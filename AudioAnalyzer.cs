@@ -43,25 +43,28 @@ public class AudioAnalyzer
         {
             result.OldBitrate = reader.Mp3WaveFormat.AverageBytesPerSecond * 8;
 
-            if (result.OldBitrate - 128000 > 3000)
+            if (!MixOptimize.SkipSounds)
             {
-                result.NeedsBitrateProcessing = true;
-                result.NewBitrate = 128000;
-                return result;
-            }
-            else
-            {
-                Mp3Frame frame = reader.ReadNextFrame();
-                while (frame != null)
+                if (result.OldBitrate - 128000 > 3000)
                 {
-                    if (frame.BitRate - 128000 > 3000)
+                    result.NeedsBitrateProcessing = true;
+                    result.NewBitrate = 128000;
+                    return result;
+                }
+                else
+                {
+                    Mp3Frame frame = reader.ReadNextFrame();
+                    while (frame != null)
                     {
-                        result.NeedsBitrateProcessing = true;
-                        result.NewBitrate = 128000;
-                        return result;
-                    }
+                        if (frame.BitRate - 128000 > 3000)
+                        {
+                            result.NeedsBitrateProcessing = true;
+                            result.NewBitrate = 128000;
+                            return result;
+                        }
 
-                    frame = reader.ReadNextFrame();
+                        frame = reader.ReadNextFrame();
+                    }
                 }
             }
         }
@@ -82,10 +85,9 @@ public class AudioAnalyzer
             WaveFileReader reader = new WaveFileReader(ms);
             result.OldBitrate = reader.WaveFormat.AverageBytesPerSecond * 8;
 
-            if (result.OldBitrate - 128000 > 3000)
+            if (result.OldBitrate - 128000 > 3000 && !MixOptimize.SkipSounds)
             {
                 result.NeedsBitrateProcessing = true;
-                return result;
             }
         }
 
