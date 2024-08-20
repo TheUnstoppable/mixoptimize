@@ -74,10 +74,9 @@ public class AudioAnalyzer
 
     public static AudioAnalysisResult AnalyzeWAV(byte[] wavBytes)
     {
-        var result = new AudioAnalysisResult()
+        var result = new AudioAnalysisResult
         {
-            NeedsConversion = true,
-            NewBitrate = 128000
+            NeedsConversion = !MixOptimize.SkipSounds,
         };
 
         using (var ms = new MemoryStream(wavBytes))
@@ -88,6 +87,7 @@ public class AudioAnalyzer
             if (result.OldBitrate - 128000 > 3000 && !MixOptimize.SkipSounds)
             {
                 result.NeedsBitrateProcessing = true;
+                result.NewBitrate = 128000;
             }
         }
 
