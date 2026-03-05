@@ -34,7 +34,7 @@ public struct ImageAnalysisResult : IAnalysisResult
 
 public static class ImageAnalyzer
 {
-    private static bool AnalyzeDimensions(ref int width, ref int height)
+    private static bool AnalyzeDimensions(ref uint width, ref uint height)
     {
         bool ret = false;
 
@@ -68,7 +68,7 @@ public static class ImageAnalyzer
 
         if (ret)
         {
-            width = height = (int)Math.Pow(2, exp);
+            width = height = (uint)Math.Pow(2, exp);
         }
 
         return ret;
@@ -77,11 +77,11 @@ public static class ImageAnalyzer
     public static ImageAnalysisResult AnalyzeDDS(byte[] ddsBytes)
     {
         var dds = new MagickImage(ddsBytes, MagickFormat.Dds);
-        int origWidth = dds.Width, origHeight = dds.Height;
+        uint origWidth = dds.Width, origHeight = dds.Height;
 
         if (!MixOptimize.SkipTextureResize)
         {
-            int width = origWidth, height = origHeight;
+            uint width = origWidth, height = origHeight;
             var result = new ImageAnalysisResult
             {
                 NeedsResizing = AnalyzeDimensions(ref width, ref height),
@@ -107,11 +107,11 @@ public static class ImageAnalyzer
     public static ImageAnalysisResult AnalyzeTGA(byte[] tgaBytes)
     {
         var tga = new MagickImage(tgaBytes, MagickFormat.Tga);
-        int origWidth = tga.Width, origHeight = tga.Height;
+        uint origWidth = tga.Width, origHeight = tga.Height;
 
         if (!MixOptimize.SkipTextureResize)
         {
-            int width = origWidth, height = origHeight;
+            uint width = origWidth, height = origHeight;
             var result = new ImageAnalysisResult
             {
                 NeedsConversion = !MixOptimize.SkipTextureConversion,
