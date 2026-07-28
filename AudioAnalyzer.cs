@@ -39,11 +39,11 @@ public class AudioAnalyzer
         var result = new AudioAnalysisResult();
 
         using (var ms = new MemoryStream(mp3Bytes))
-        using (Mp3FileReader reader = new Mp3FileReader(ms))
+        using (Mp3FileReaderBase reader = new Mp3FileReaderBase(ms, fmt => new Mp3FrameDecompressor(fmt)))
         {
             result.OldBitrate = reader.Mp3WaveFormat.AverageBytesPerSecond * 8;
 
-            if (!MixOptimize.SkipSounds)
+            if (!MixOptimize.Settings.SkipSounds)
             {
                 if (result.OldBitrate - 128000 > 3000)
                 {
@@ -76,7 +76,7 @@ public class AudioAnalyzer
     {
         var result = new AudioAnalysisResult
         {
-            NeedsConversion = !MixOptimize.SkipSounds,
+            NeedsConversion = !MixOptimize.Settings.SkipSounds,
         };
 
         using (var ms = new MemoryStream(wavBytes))
@@ -84,7 +84,7 @@ public class AudioAnalyzer
             WaveFileReader reader = new WaveFileReader(ms);
             result.OldBitrate = reader.WaveFormat.AverageBytesPerSecond * 8;
 
-            if (result.OldBitrate - 128000 > 3000 && !MixOptimize.SkipSounds)
+            if (result.OldBitrate - 128000 > 3000 && !MixOptimize.Settings.SkipSounds)
             {
                 result.NeedsBitrateProcessing = true;
                 result.NewBitrate = 128000;
@@ -100,7 +100,7 @@ public class AudioAnalyzer
         {
             using (var retMs = new MemoryStream())
             using (var ms = new MemoryStream(mp3Bytes))
-            using (Mp3FileReader reader = new Mp3FileReader(ms))
+            using (Mp3FileReaderBase reader = new Mp3FileReaderBase(ms, fmt => new Mp3FrameDecompressor(fmt)))
             using (var writer = new LameMP3FileWriter(retMs, reader.WaveFormat, 128))
             {
                 reader.CopyTo(writer);

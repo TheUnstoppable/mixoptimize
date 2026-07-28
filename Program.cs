@@ -16,162 +16,130 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using Spectre.Console.Cli.Help;
+using Spectre.Console.Rendering;
+
 namespace mixoptimize;
 
-public class MixOptimize
+public class MixOptimizeHelpProvider : HelpProvider
 {
-    const string Version = "1.0";
-
-    static void PrintHelp()
+    public MixOptimizeHelpProvider(ICommandAppSettings settings) : base(settings)
     {
-        Console.WriteLine("Usage: mixoptimize [options] <input file>");
-        Console.WriteLine("Description:");
-        Console.WriteLine("  This tool attempts to decrease the file size and increase the performance");
-        Console.WriteLine("  by applying various optimizations to .mix and .pkg files, without any guarantee.");
-        Console.WriteLine("Options:");
-        Console.WriteLine("  --skip-texture-conversion: Skips texture conversion to DDS.");
-        Console.WriteLine("  --skip-texture-resize: Skips resizing textures to a square.");
-        Console.WriteLine("  --max-exponent <value>: The maximum power of two to use while resizing. (Default: 9 -> 2^9 = 512)");
-        Console.WriteLine("  --skip-sounds: Skips re-encoding sounds to MP3 @ 128 kbps.");
-        Console.WriteLine("  --skip-confirmation: Skips confirmation for the changes to be done.");
-        Console.WriteLine("  --read-stdin: Reads the file from standard input instead. (Implies --skip-confirmation)");
-        Console.WriteLine("  --out: Output file. (Required if --read-stdin is specified)");
-        Console.WriteLine();
-        Console.WriteLine("MixOptimize is licensed under GNU General Public License v3.0. Please view LICENSE file for details.");
-        Console.WriteLine();
-        Console.WriteLine("MixOptimize uses the following open-source libraries:");
-        Console.WriteLine("  Magick.NET by Dirk Lemstra");
-        Console.WriteLine("  NAudio by Mark Heath & NAudio Contributors");
-        Console.WriteLine("  NAudio.Lame by Corey Murtagh");
+        
     }
 
-    static void PrintSplash()
+    public override IEnumerable<IRenderable> GetFooter(ICommandModel model, ICommandInfo? command)
     {
-        Console.WriteLine($"MixOptimize utility {Version} - by Unstoppable");
+        var list = base.GetFooter(model, command).ToList();
+        
+        list.Add(new Rule());
+        list.Add(new Markup("[blue]MixOptimize[/] is licensed under [bold]GNU General Public License v3.0[/]. Please view [b]LICENSE[/] file for details."));
+        list.Add(new Markup("[blue]MixOptimize[/] uses the following open-source libraries:"));
+        list.Add(new Rows(
+            new Markup("[bold]Magick.NET[/] [dim]by[/] Dirk Lemstra"),
+            new Markup("[bold]NAudio[/] [dim]by[/] Mark Heath & NAudio Contributors"),
+            new Markup("[bold]NAudio.Lame.CrossPlatform[/] [dim]by[/] Corey Murtagh, Daniel Hilgarth"),
+            new Markup("[bold]NLayer.NAudioSupport[/] [dim]by[/] Mark Heath, Andrew Ward"),
+            new Markup("[bold]Spectre.Console.Cli[/] [dim]by[/] Patrik Svensson, Phil Scott, Nils Andresen, Cédric Luthi")
+            ));
+        list.Add(new Rule());
+
+        return list;
     }
+}
 
-    public static bool SkipTextureConversion = false;
-    public static bool SkipTextureResize = false;
-    public static bool SkipSounds = false;
-    public static bool ReadStandardInput = false;
-    public static bool SkipConfirmation = false;
-    public static int MaxExponent = 9;
-    public static string? OutputFile = null;
+public class MixOptimizeSettings : CommandSettings
+{
+    [CommandArgument(0, "[input]")]
+    [Description("The input file. Ignored if '--read-stdin' is specified.")]
+    public string? InputFile { get; set; } = null;
+    
+    [CommandOption("--skip-texture-conversion")]
+    [Description("Skips texture conversion to DDS.")]
+    [DefaultValue(false)]
+    public bool SkipTextureConversion { get; set; }
+    
+    [CommandOption("--skip-texture-resize")]
+    [Description("Skips resizing textures to a square.")]
+    [DefaultValue(false)]
+    public bool SkipTextureResize { get; set; }
+    
+    [CommandOption("--skip-sounds")]
+    [Description("Skips re-encoding sounds to MP3 @ 128 kbps.")]
+    [DefaultValue(false)]
+    public bool SkipSounds { get; set; }
+    
+    [CommandOption("--read-stdin")]
+    [Description("Reads the file from standard input instead. (Implies --skip-confirmation)")]
+    [DefaultValue(false)]
+    public bool ReadStandardInput { get; set; }
+    
+    [CommandOption("--skip-confirmation")]
+    [Description("Skips confirmation for the changes to be done.")]
+    [DefaultValue(false)]
+    public bool SkipConfirmation { get; set; }
+    
+    [CommandOption("--max-exponent")]
+    [Description("The maximum power of two to use while resizing. (Default: 9 -> 2^9 = 512)")]
+    [DefaultValue(9)]
+    public int MaxExponent { get; set; }
+    
+    [CommandOption("--out")]
+    [Description("Output file. (Required if --read-stdin is specified)")]
+    public string? OutputFile { get; set; }
+}
 
-    static void Main(string[] args)
+public class MixOptimizeCommand : Command<MixOptimizeSettings>
+{
+    protected override int Execute(CommandContext context, MixOptimizeSettings settings, CancellationToken cancellationToken)
     {
-        PrintSplash();
-
-        if (args.Length == 0)
-        {
-            PrintHelp();
-            return;
-        }
-
-        ConsoleManager.Init();
-        MixOptimizeMain(args);
-        ConsoleManager.Shutdown();
-    }
-
-    static void MixOptimizeMain(string[] args)
-    {
-        string targetFile = string.Empty;
-
-        bool readingOptions = true;
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == "--skip-texture-conversion")
-            {
-                SkipTextureConversion = true;
-            }
-            else if (args[i] == "--skip-texture-resize")
-            {
-                SkipTextureResize = true;
-            }
-            else if (args[i] == "--max-exponent")
-            {
-                if (!int.TryParse(args[++i], out MaxExponent))
-                {
-                    ConsoleManager.Print("Invalid value for switch \"--max-exponent\" specified. Using default value... (Must be numeric)");
-                    MaxExponent = 9;
-                }
-            }
-            else if (args[i] == "--skip-sounds")
-            {
-                SkipSounds = true;
-            }
-            else if (args[i] == "--read-stdin")
-            {
-                ReadStandardInput = true;
-                SkipConfirmation = true;
-            }
-            else if (args[i] == "--skip-confirmation")
-            {
-                SkipConfirmation = true;
-            }
-            else if (args[i] == "--out")
-            {
-                OutputFile = args[++i];
-                if (!Uri.IsWellFormedUriString(OutputFile, UriKind.RelativeOrAbsolute))
-                {
-                    ConsoleManager.Print("Invalid output file specified.");
-                    OutputFile = null;
-                }
-            }
-            else
-            {
-                readingOptions = false;
-            }
-
-            if (!readingOptions)
-            {
-                targetFile = string.Join(" ", args.Skip(i));
-                break;
-            }
-        }
-
-
+        MixOptimize.Settings = settings;
+        
         byte[] mixFileBytes;
 
-        if (ReadStandardInput)
+        if (settings.ReadStandardInput)
         {
-            if (OutputFile == null)
+            settings.SkipConfirmation = true;
+            
+            if (settings.OutputFile == null)
             {
-                ConsoleManager.Print("--out switch has to be specified when --read-stdin is used!");
-                return;
+                AnsiConsole.ErrorLine("--out switch has to be specified when --read-stdin is used!");
+                return -1;
             }
 
-            targetFile = "STDIN";
+            settings.InputFile = "STDIN";
 
             using (var stdin = Console.OpenStandardInput())
             {
-                ConsoleManager.SetLoading("Reading the file from standard input...");
+                byte[]? bytes = null;
+                AnsiConsole.Status()
+                    .Start("Reading the file from standard input...", async x =>
+                    {
+                        var result = await InputTask.ReadFromStream(stdin);
+                        bytes = result;
+                    });
                 
-                var result = InputTask.ReadFromStream(stdin);
-                result.Wait();
-                mixFileBytes = result.Result;
-
-                ConsoleManager.ResetLoading();
+                mixFileBytes = bytes ?? [];
             }
         }
         else
         {
-            if (File.Exists(targetFile))
+            if (File.Exists(settings.InputFile))
             {
-                OutputFile = targetFile;
-                mixFileBytes = File.ReadAllBytes(targetFile);
+                settings.OutputFile = settings.InputFile;
+                mixFileBytes = File.ReadAllBytes(settings.InputFile);
             }
             else
             {
-                ConsoleManager.Print($"Could not find the specified file \"{targetFile}\".");
-                return;
+                AnsiConsole.ErrorLine($"Could not find the specified file \"{settings.InputFile}\".");
+                return -2;
             }
         }
 
         if (mixFileBytes.Length == 0)
         {
-            ConsoleManager.Print("The specified Mix file is empty.");
-            return;
+            AnsiConsole.ErrorLine("The specified Mix file is empty.");
+            return -3;
         }
 
         MixPackageClass mixFile;
@@ -181,56 +149,93 @@ public class MixOptimize
         }
         catch (Exception ex)
         {
-            ConsoleManager.Print($"Failed to load Mix file: {ex.Message}");
-            return;
+            AnsiConsole.ErrorLine("Failed to load Mix file.");
+            AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything | ExceptionFormats.NoStackTrace);
+            return -4;
         }
-
-        ConsoleManager.InitProgress(0, mixFile.FileCount);
-        ConsoleManager.SetLoading($"Analyzing the Mix file...");
 
         Dictionary<int, IAnalysisResult> results = new();
-        while (ConsoleManager.ProgressBarValue != ConsoleManager.ProgressBarMaximum)
-        {
-            ConsoleManager.SetLoading($"Analyzing the Mix file... ({ConsoleManager.ProgressBarValue}/{ConsoleManager.ProgressBarMaximum})");
-
-            var file = mixFile.Files[ConsoleManager.ProgressBarValue];
-            var name = file.FileName;
-            var ext = Path.GetExtension(name)[1..].ToUpper();
-
-            switch (ext)
+        
+        AnsiConsole.Progress()
+            .Start(ctx =>
             {
-                case "DDS":
-                   results.Add(ConsoleManager.ProgressBarValue, ImageAnalyzer.AnalyzeDDS(file.Data));
-                   break;
+                var task = ctx.AddTask("Analyzing the Mix file...", maxValue: mixFile.FileCount);
+                task.HideWhenCompleted = true;
+                
+                var fileTask = ctx.AddTask("Initializing...", maxValue: 1);
+                fileTask.IsIndeterminate = true;
+                fileTask.HideWhenCompleted = true;
+                
+                for(int i = 0; i < mixFile.FileCount; ++i)
+                {
+                    if (cancellationToken.IsCancellationRequested) break;
+                    
+                    var file = mixFile.Files[i];
+                    var name = file.FileName;
+                    var ext = Path.GetExtension(name)[1..].ToUpper();
 
-                case "TGA":
-                    results.Add(ConsoleManager.ProgressBarValue, ImageAnalyzer.AnalyzeTGA(file.Data));
-                    break;
+                    fileTask.Description = name;
 
-                case "MP3":
-                    results.Add(ConsoleManager.ProgressBarValue, AudioAnalyzer.AnalyzeMP3(file.Data));
-                    break;
+                    try
+                    {
+                        switch (ext)
+                        {
+                            case "DDS":
+                                results.Add(i, ImageAnalyzer.AnalyzeDDS(file.Data));
+                                break;
 
-                case "WAV":
-                    results.Add(ConsoleManager.ProgressBarValue, AudioAnalyzer.AnalyzeWAV(file.Data));
-                    break;
-            }
+                            case "TGA":
+                                results.Add(i, ImageAnalyzer.AnalyzeTGA(file.Data));
+                                break;
 
-            ConsoleManager.ProgressBarValue++;
+                            case "MP3":
+                                results.Add(i, AudioAnalyzer.AnalyzeMP3(file.Data));
+                                break;
+
+                            case "WAV":
+                                results.Add(i, AudioAnalyzer.AnalyzeWAV(file.Data));
+                                break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.ErrorLine($"Failed to analyze file {name}.");
+                        AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything | ExceptionFormats.NoStackTrace);
+                    }
+                    
+                    task.Increment(1);
+                }
+                
+                fileTask.Increment(1);
+            });
+        
+        if (cancellationToken.IsCancellationRequested)
+        {
+            AnsiConsole.ErrorLine("Aborting...");
+            return 0;
         }
-
-        ConsoleManager.ResetProgress();
 
         var actionCount = results.Count(x => x.Value.NeedsAction);
         if (actionCount == 0)
         {
-            ConsoleManager.Print($"Mix file {Path.GetFileName(targetFile)} does not require any optimizations.");
-            return;
+            AnsiConsole.MarkupLineInterpolated($"[green]Mix file {Path.GetFileName(settings.InputFile)} does not require any optimizations.[/]");
+            return -5;
         }
         else
         {
-            ConsoleManager.Print($"Mix file {Path.GetFileName(targetFile)} has {actionCount} optimizations available.");
-
+            string color = "yellow";
+            switch ((double)actionCount / mixFile.FileCount)
+            {
+                case <0.5:
+                    color = "green";
+                    break;
+                case >0.8:
+                    color = "red";
+                    break;
+            }
+            
+            var tree = new Tree($"[{color}]{Path.GetFileName(settings.InputFile)}[/] [dim]([bold]{actionCount}[/] optimizations)[/]");
+            
             foreach (var entry in results)
             {
                 if (!entry.Value.NeedsAction) continue;
@@ -239,128 +244,164 @@ public class MixOptimize
                 var name = file.FileName;
                 var ext = Path.GetExtension(name)[1..].ToUpper();
 
-                ConsoleManager.Print($"File: {name}");
+                var fileNode = tree.AddNode(name);
 
                 if (entry.Value is ImageAnalysisResult imageResult)
                 {
                     if (imageResult.NeedsConversion)
                     {
-                        ConsoleManager.Print($"   ► Format: {ext} --> DDS");
+                        fileNode.AddNode($"Format: [red]{ext}[/] --> [green]DDS[/]");
                     }
 
                     if (imageResult.NeedsResizing)
                     {
-                        ConsoleManager.Print($"   ► Size: {imageResult.OldSize.Width}x{imageResult.OldSize.Height} --> {imageResult.NewSize.Width}x{imageResult.NewSize.Height}");
+                        fileNode.AddNode($"Size: [yellow]{imageResult.OldSize.Width}x{imageResult.OldSize.Height}[/] --> [green]{imageResult.NewSize.Width}x{imageResult.NewSize.Height}[/]");
                     }
                 }
                 else if (entry.Value is AudioAnalysisResult audioResult)
                 {
                     if (audioResult.NeedsConversion)
                     {
-                        ConsoleManager.Print($"   ► Format: {ext} --> MP3");
+                        fileNode.AddNode($"Format: [red]{ext}[/] --> [green]MP3[/]");
                     }
 
                     if (audioResult.NeedsBitrateProcessing)
                     {
-                        ConsoleManager.Print($"   ► Bit Rate: {audioResult.OldBitrate / 1000} kbps --> {audioResult.NewBitrate / 1000} kbps");
+                        fileNode.AddNode($"Bit Rate: [yellow]{audioResult.OldBitrate / 1000} kbps[/] --> [green]{audioResult.NewBitrate / 1000} kbps[/]");
                     }
                 }
             }
+            
+            AnsiConsole.Write(tree);
         }
 
-        ConsoleManager.ResetLoading();
-
-        if (!SkipConfirmation)
+        if (!settings.SkipConfirmation)
         {
-            bool validInput = false;
-            do
+            if (!AnsiConsole.Confirm($"Would you like to apply all [bold]{actionCount}[/] optimizations?"))
             {
-                ConsoleManager.Print($"Would you like to apply all {actionCount} optimizations? (Y/N)");
-
-                var key = Console.ReadKey(true);
-                if (key.KeyChar == 'y' || key.KeyChar == 'Y')
-                {
-                    validInput = true;
-                }
-                else if (key.KeyChar == 'n' || key.KeyChar == 'N')
-                {
-                    ConsoleManager.Print("Aborting...");
-                    return;
-                }
-            } while (!validInput);
+                AnsiConsole.ErrorLine("Aborting...");
+                return 0;
+            }
         }
 
         // Create a backup of the original file.
-        if (!ReadStandardInput)
+        if (!settings.ReadStandardInput)
         {
-            ConsoleManager.SetLoading($"Creating backup of {Path.GetFileName(targetFile)}...");
-            var backupFileName = Path.GetFileName(targetFile) + "-BACKUP";
-            var backupPath = Path.Combine(Path.GetDirectoryName(targetFile)!, backupFileName);
-            if (File.Exists(backupPath))
-            {
-                File.Delete(backupPath);
-            }
-
-            File.Copy(targetFile, backupPath);
-            ConsoleManager.ResetLoading();
-            ConsoleManager.Print($"Backup has been saved as {backupFileName}.");
-        }
-
-
-        // Start applying optimizations.
-        ConsoleManager.InitProgress(0, actionCount);
-        ConsoleManager.SetLoading("Applying optimizations...");
-        foreach (var entry in results.Where(x => x.Value.NeedsAction))
-        {
-            var file = mixFile.Files[entry.Key];
-            var name = file.FileName;
-            var ext = Path.GetExtension(name)[1..].ToUpper();
-
-            ConsoleManager.SetLoading($"Applying optimizations for {name}... ({ConsoleManager.ProgressBarValue}/{ConsoleManager.ProgressBarMaximum})");
-
-            try
-            {
-                switch (ext)
+            AnsiConsole.Status()
+                .Start($"Creating backup of [bold]{Path.GetFileName(settings.InputFile)}[/]...", ctx =>
                 {
-                    case "DDS":
-                        file.Data = ImageAnalyzer.ApplyDDS(file.Data, (ImageAnalysisResult)entry.Value);
-                        break;
+                    var backupFileName = Path.GetFileName(settings.InputFile) + "-BACKUP";
+                    var backupPath = Path.Combine(Path.GetDirectoryName(settings.InputFile)!, backupFileName);
+                    if (File.Exists(backupPath))
+                    {
+                        File.Delete(backupPath);
+                    }
 
-                    case "TGA":
-                        if (((ImageAnalysisResult)entry.Value).NeedsConversion)
-                        {
-                            file.FileName = Path.GetFileNameWithoutExtension(name) + ".dds";
-                        }
-                        file.Data = ImageAnalyzer.ApplyTGA(file.Data, (ImageAnalysisResult)entry.Value);
-                        break;
-
-                    case "MP3":
-                        file.Data = AudioAnalyzer.ApplyMP3(file.Data, (AudioAnalysisResult)entry.Value);
-                        break;
-
-                    case "WAV":
-                        var oldName = file.FileName;
-                        file.FileName = Path.GetFileNameWithoutExtension(name) + ".mp3";
-                        file.Data = AudioAnalyzer.ApplyWAV(file.Data, (AudioAnalysisResult)entry.Value);
-                        LevelDataManipulator.ReplaceLevelData(mixFile, oldName, file.FileName);
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                ConsoleManager.Print($"Failed to apply optimizations for {name}: {ex.Message}");
-                actionCount--;
-            }
-
-            ConsoleManager.ProgressBarValue++;
+                    File.Copy(settings.InputFile, backupPath);
+                    
+                    AnsiConsole.MarkupLineInterpolated($"[green]Backup has been saved as [bold]{backupFileName}[/].[/]");
+                });
         }
 
-        ConsoleManager.ResetProgress();
-        ConsoleManager.SetLoading("Saving Mix file...");
+        AnsiConsole.Progress()
+            .Start(ctx =>
+            {
+                var task = ctx.AddTask("Applying optimizations...", maxValue: actionCount);
+                task.HideWhenCompleted = true;
+                
+                var fileTask = ctx.AddTask("Initializing...", maxValue: 1);
+                fileTask.IsIndeterminate = true;
+                fileTask.HideWhenCompleted = true;
+                
+                foreach (var entry in results.Where(x => x.Value.NeedsAction))
+                {
+                    if (cancellationToken.IsCancellationRequested) break;
+                    
+                    var file = mixFile.Files[entry.Key];
+                    var name = file.FileName;
+                    var ext = Path.GetExtension(name)[1..].ToUpper();
 
-        mixFile.Save(OutputFile);
-        ConsoleManager.ResetLoading();
+                    fileTask.Description = name;
 
-        ConsoleManager.Print($"Applied {actionCount} optimizations to {Path.GetFileName(OutputFile)}.");
+                    try
+                    {
+                        switch (ext)
+                        {
+                            case "DDS":
+                                file.Data = ImageAnalyzer.ApplyDDS(file.Data, (ImageAnalysisResult)entry.Value);
+                                break;
+
+                            case "TGA":
+                                if (((ImageAnalysisResult)entry.Value).NeedsConversion)
+                                {
+                                    file.FileName = Path.GetFileNameWithoutExtension(name) + ".dds";
+                                }
+                                file.Data = ImageAnalyzer.ApplyTGA(file.Data, (ImageAnalysisResult)entry.Value);
+                                break;
+
+                            case "MP3":
+                                file.Data = AudioAnalyzer.ApplyMP3(file.Data, (AudioAnalysisResult)entry.Value);
+                                break;
+
+                            case "WAV":
+                                var oldName = file.FileName;
+                                file.FileName = Path.GetFileNameWithoutExtension(name) + ".mp3";
+                                file.Data = AudioAnalyzer.ApplyWAV(file.Data, (AudioAnalysisResult)entry.Value);
+                                LevelDataManipulator.ReplaceLevelData(mixFile, oldName, file.FileName);
+                                break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.ErrorLine($"Failed to apply optimizations for {name}.");
+                        AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything | ExceptionFormats.NoStackTrace);
+                    }
+
+                    task.Increment(1);
+                }
+
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    fileTask.Description = "Saving Mix file...";
+                    mixFile.Save(settings.OutputFile);
+                    fileTask.Increment(1);
+                }
+            });
+        
+        if (cancellationToken.IsCancellationRequested)
+        {
+            AnsiConsole.ErrorLine("Aborting...");
+            return 0;
+        }
+        
+        AnsiConsole.MarkupLineInterpolated($"Applied [bold]{actionCount}[/] optimizations to [green]{Path.GetFileName(settings.OutputFile)}[/].");
+        return 0;
+    }
+}
+
+public class MixOptimize
+{
+    const string Version = "1.0";
+    
+    public static MixOptimizeSettings Settings { get; set; }
+    
+    static void PrintSplash()
+    {
+        Console.WriteLine($"MixOptimize utility {Version} - by Unstoppable");
+    }
+
+    static int Main(string[] args)
+    {
+        PrintSplash();
+
+        var app = new CommandApp<MixOptimizeCommand>();
+
+        app.Configure(c =>
+        {
+            c.SetApplicationName("MixOptimize");
+            c.SetApplicationVersion(Version);
+        });
+
+        return app.Run(args);
     }
 }

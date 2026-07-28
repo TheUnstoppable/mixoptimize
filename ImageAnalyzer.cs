@@ -60,9 +60,9 @@ public static class ImageAnalyzer
             ret = true;
         }
 
-        if (exp > MixOptimize.MaxExponent) // Too big, resize to the maximum allowed size.
+        if (exp > MixOptimize.Settings.MaxExponent) // Too big, resize to the maximum allowed size.
         {
-            exp = MixOptimize.MaxExponent;
+            exp = MixOptimize.Settings.MaxExponent;
             ret = true;
         }
 
@@ -79,7 +79,7 @@ public static class ImageAnalyzer
         var dds = new MagickImage(ddsBytes, MagickFormat.Dds);
         uint origWidth = dds.Width, origHeight = dds.Height;
 
-        if (!MixOptimize.SkipTextureResize)
+        if (!MixOptimize.Settings.SkipTextureResize)
         {
             uint width = origWidth, height = origHeight;
             var result = new ImageAnalysisResult
@@ -109,12 +109,12 @@ public static class ImageAnalyzer
         var tga = new MagickImage(tgaBytes, MagickFormat.Tga);
         uint origWidth = tga.Width, origHeight = tga.Height;
 
-        if (!MixOptimize.SkipTextureResize)
+        if (!MixOptimize.Settings.SkipTextureResize)
         {
             uint width = origWidth, height = origHeight;
             var result = new ImageAnalysisResult
             {
-                NeedsConversion = !MixOptimize.SkipTextureConversion,
+                NeedsConversion = !MixOptimize.Settings.SkipTextureConversion,
                 NeedsResizing = AnalyzeDimensions(ref width, ref height),
                 OldSize = new Size(origWidth, origHeight)
             };
@@ -130,7 +130,7 @@ public static class ImageAnalyzer
         {
             return new ImageAnalysisResult()
             {
-                NeedsConversion = !MixOptimize.SkipTextureConversion,
+                NeedsConversion = !MixOptimize.Settings.SkipTextureConversion,
                 OldSize = new Size(origWidth, origHeight)
             };
         }
