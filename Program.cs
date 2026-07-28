@@ -1,6 +1,6 @@
 ﻿/*
  *  MixOptimize - C&C Renegade map and mod package optimizer
- *  Copyright (C) 2023 Unstoppable
+ *  Copyright (C) 2026 Unstoppable
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,9 +16,6 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using Spectre.Console.Cli.Help;
-using Spectre.Console.Rendering;
-
 namespace mixoptimize;
 
 public class MixOptimizeHelpProvider : HelpProvider
@@ -33,8 +30,9 @@ public class MixOptimizeHelpProvider : HelpProvider
         var list = base.GetFooter(model, command).ToList();
         
         list.Add(new Rule());
-        list.Add(new Markup("[blue]MixOptimize[/] is licensed under [bold]GNU General Public License v3.0[/]. Please view [b]LICENSE[/] file for details."));
-        list.Add(new Markup("[blue]MixOptimize[/] uses the following open-source libraries:"));
+        list.Add(new Markup($"[blue]{MixOptimize.Name}[/] is licensed under [bold]GNU General Public License v3.0[/]. Please view [b]LICENSE[/] file for details." + Environment.NewLine));
+        list.Add(new Markup(Environment.NewLine));
+        list.Add(new Markup($"[blue]{MixOptimize.Name}[/] uses the following open-source libraries:" + Environment.NewLine));
         list.Add(new Rows(
             new Markup("[bold]Magick.NET[/] [dim]by[/] Dirk Lemstra"),
             new Markup("[bold]NAudio[/] [dim]by[/] Mark Heath & NAudio Contributors"),
@@ -381,13 +379,15 @@ public class MixOptimizeCommand : Command<MixOptimizeSettings>
 
 public class MixOptimize
 {
-    const string Version = "1.0";
-    
-    public static MixOptimizeSettings Settings { get; set; }
+    public const string Name = "MixOptimize";
+    public const string Version = "1.0";
+    public const string Authors = "Unstoppable";
+
+    public static MixOptimizeSettings Settings { get; set; } = null!;
     
     static void PrintSplash()
     {
-        Console.WriteLine($"MixOptimize utility {Version} - by Unstoppable");
+        Console.WriteLine($"{Name} utility {Version} - by {Authors}");
     }
 
     static int Main(string[] args)
@@ -398,8 +398,9 @@ public class MixOptimize
 
         app.Configure(c =>
         {
-            c.SetApplicationName("MixOptimize");
+            c.SetApplicationName(Name);
             c.SetApplicationVersion(Version);
+            c.SetHelpProvider(new MixOptimizeHelpProvider(c.Settings));
         });
 
         return app.Run(args);
