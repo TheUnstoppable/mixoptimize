@@ -97,9 +97,9 @@ public static class FFMpegWrapper
                 await input.CopyToAsync(proc.StandardInput.BaseStream);
                 await proc.StandardInput.BaseStream.FlushAsync();
             }
-            catch (IOException ioex) when (ioex.InnerException is SocketException)
+            catch (IOException)
             {
-                // Ignored.
+                // Ignored, depends on exit code.
             }
             finally
             {
