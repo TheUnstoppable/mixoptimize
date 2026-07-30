@@ -16,6 +16,8 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using ImageMagick.Formats;
+
 namespace mixoptimize;
 
 public struct ImageAnalysisResult : IAnalysisResult
@@ -148,7 +150,13 @@ public static class ImageAnalyzer
             });
         }
 
-        return dds.ToByteArray(MagickFormat.Dds);
+        var options = new DdsWriteDefines
+        {
+            Compression = DdsCompression.Dxt1,
+            MipmapCount = MixOptimize.Settings.MaxExponent / 2
+        };
+        
+        return dds.ToByteArray(options);
     }
 
     public static byte[] ApplyTGA(byte[] tgaBytes, ImageAnalysisResult analysis)
@@ -162,7 +170,18 @@ public static class ImageAnalyzer
                 IgnoreAspectRatio = true
             });
         }
-
-        return tga.ToByteArray(analysis.NeedsConversion ? MagickFormat.Dds : MagickFormat.Tga);
+        
+        if (analysis.NeedsConversion)
+        { 
+            var options = new DdsWriteDefines
+            {
+                Compression = DdsCompression.Dxt1,
+                MipmapCount = MixOptimize.Settings.MaxExponent / 2
+            };
+            
+            return tga.ToByteArray(options);
+        }
+        
+        return tga.ToByteArray(MagickFormat.Tga);
     }
 }
