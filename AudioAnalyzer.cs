@@ -38,35 +38,15 @@ public class AudioAnalyzer
     {
         var result = new AudioAnalysisResult();
 
-        using (var ms = new MemoryStream(mp3Bytes))
-        using (Mp3FileReaderBase reader = new Mp3FileReaderBase(ms, fmt => new Mp3FrameDecompressor(fmt)))
+        using var ms = new MemoryStream(mp3Bytes);
+        
+        var analysis = FFMpegWrapper.ProbeFile(ms);
+        result.OldBitrate = analysis.BitRate;
+            
+        if (!MixOptimize.Settings.SkipSounds && result.OldBitrate - 128000 > 3000)
         {
-            result.OldBitrate = reader.Mp3WaveFormat.AverageBytesPerSecond * 8;
-
-            if (!MixOptimize.Settings.SkipSounds)
-            {
-                if (result.OldBitrate - 128000 > 3000)
-                {
-                    result.NeedsBitrateProcessing = true;
-                    result.NewBitrate = 128000;
-                    return result;
-                }
-                else
-                {
-                    Mp3Frame frame = reader.ReadNextFrame();
-                    while (frame != null)
-                    {
-                        if (frame.BitRate - 128000 > 3000)
-                        {
-                            result.NeedsBitrateProcessing = true;
-                            result.NewBitrate = 128000;
-                            return result;
-                        }
-
-                        frame = reader.ReadNextFrame();
-                    }
-                }
-            }
+            result.NeedsBitrateProcessing = true;
+            result.NewBitrate = 128000;
         }
 
         return result;
@@ -81,10 +61,10 @@ public class AudioAnalyzer
 
         using (var ms = new MemoryStream(wavBytes))
         {
-            WaveFileReader reader = new WaveFileReader(ms);
-            result.OldBitrate = reader.WaveFormat.AverageBytesPerSecond * 8;
-
-            if (result.OldBitrate - 128000 > 3000 && !MixOptimize.Settings.SkipSounds)
+            var analysis = FFMpegWrapper.ProbeFile(ms);
+            result.OldBitrate = analysis.BitRate;
+            
+            if (!MixOptimize.Settings.SkipSounds && result.OldBitrate - 128000 > 3000)
             {
                 result.NeedsBitrateProcessing = true;
                 result.NewBitrate = 128000;
@@ -98,15 +78,7 @@ public class AudioAnalyzer
     {
         if (analysis.NeedsBitrateProcessing)
         {
-            using (var retMs = new MemoryStream())
-            using (var ms = new MemoryStream(mp3Bytes))
-            using (Mp3FileReaderBase reader = new Mp3FileReaderBase(ms, fmt => new Mp3FrameDecompressor(fmt)))
-            using (var writer = new LameMP3FileWriter(retMs, reader.WaveFormat, 128))
-            {
-                reader.CopyTo(writer);
-                writer.Flush();
-                return retMs.ToArray();
-            }
+            return FFMpegWrapper.TranscodeFile(mp3Bytes, "mp3");
         }
         else
         {
@@ -116,23 +88,13 @@ public class AudioAnalyzer
 
     public static byte[] ApplyWAV(byte[] wavBytes, AudioAnalysisResult analysis)
     {
-        using (var retMs = new MemoryStream())
-        using (var ms = new MemoryStream(wavBytes))
+        if (analysis is { NeedsConversion: true, NeedsBitrateProcessing: true })
         {
-            if (analysis is { NeedsConversion: true, NeedsBitrateProcessing: true })
-            {
-                using (WaveFileReader reader = new WaveFileReader(ms))
-                using (var writer = new LameMP3FileWriter(retMs, reader.WaveFormat, 128))
-                {
-                    reader.CopyTo(writer);
-                    writer.Flush();
-                    return retMs.ToArray();
-                }
-            }
-            else
-            {
-                return wavBytes;
-            }
+            return FFMpegWrapper.TranscodeFile(wavBytes, "wav");
+        }
+        else
+        {
+            return wavBytes;
         }
     }
 }

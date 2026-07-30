@@ -18,8 +18,37 @@
 
 namespace mixoptimize;
 
-public static class ConsoleUtilities
+public static class Extensions
 {
+    extension(Directory)
+    {
+        public static void MoveAll(string source, string destination)
+        {
+            Directory.CreateDirectory(destination);
+
+            foreach (var file in Directory.EnumerateFiles(source))
+            {
+                var target = Path.Combine(destination, Path.GetFileName(file));
+                File.Move(file, target, overwrite: true);
+            }
+
+            foreach (var directory in Directory.EnumerateDirectories(source))
+            {
+                var target = Path.Combine(destination, Path.GetFileName(directory));
+
+                if (Directory.Exists(target))
+                {
+                    MoveAll(directory, target);
+                    Directory.Delete(directory);
+                }
+                else
+                {
+                    Directory.Move(directory, target);
+                }
+            }
+        }
+    }
+    
     extension(AnsiConsole)
     {
         public static void WarningLine(string format, params object[]? args)
@@ -30,6 +59,15 @@ public static class ConsoleUtilities
         public static void ErrorLine(string format, params object[]? args)
         {
             AnsiConsole.MarkupLineInterpolated($"[red]{string.Format(format, args!)}[/]");
+        }
+    }
+
+    public static async Task<byte[]> ReadAsByteArrayAsync(this Stream str)
+    {
+        using (var ms = new MemoryStream())
+        {
+            await str.CopyToAsync(ms);
+            return ms.ToArray();
         }
     }
 }
