@@ -19,9 +19,4 @@
       <HintPath>MixLibrary.dll</HintPath>
     </Reference>
   </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="$(NuGetPackageRoot)naudio.lame.crossplatform/*/content/libmp3lame.64.dll" Link="libmp3lame.64.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="$(NuGetPackageRoot)naudio.lame.crossplatform/*/content/libmp3lame.32.dll" Link="libmp3lame.32.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-  </ItemGroup>
 </Project>
