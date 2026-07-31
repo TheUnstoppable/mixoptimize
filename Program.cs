@@ -33,9 +33,10 @@ public class MixOptimizeHelpProvider : HelpProvider
         list.Add(new Rows(
             new Markup("[bold]FFmpeg[/] [dim]by[/] FFmpeg Contributors"),
             new Markup("[bold]Magick.NET[/] [dim]by[/] Dirk Lemstra"),
+            new Markup("[bold]MixLibrary[/] [dim]by[/] The Unstoppable"),
             new Markup("[bold]SharpCompress[/] [dim]by[/] Adam Hathcock"),
             new Markup("[bold]Spectre.Console.Cli[/] [dim]by[/] Patrik Svensson, Phil Scott, Nils Andresen, Cédric Luthi")
-            ));
+        ));
         list.Add(new Rule());
 
         return list;
